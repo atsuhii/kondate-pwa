@@ -1,0 +1,14 @@
+{
+  "name": "献立ノート",
+  "short_name": "献立ノート",
+  "description": "家族の献立を記録・AIで提案",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FDFCF8",
+  "theme_color": "#2C2C1E",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
