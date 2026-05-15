@@ -642,7 +642,7 @@ document.querySelectorAll('.chip').forEach(chip => {
 });
 
 // ── AI Suggestions ──
-async function getSuggestions() {
+function getSuggestions() {
   const mood = [...document.querySelectorAll('[data-g=mood].on')].map(c => c.textContent);
   const genres = [...document.querySelectorAll('[data-g=genre].on')].map(c => c.textContent);
   const extra = document.getElementById('extra-req').value.trim();
@@ -651,16 +651,12 @@ async function getSuggestions() {
   const recent = getRecords().slice(0,7).map(r => r.name).join('、') || 'なし';
 
   document.getElementById('sug-err').textContent = '';
-  document.getElementById('ai-result').innerHTML = `
-    <div class="loading-msg">
-      考えています<span class="loading-dot">．</span><span class="loading-dot">．</span><span class="loading-dot">．</span>
-    </div>`;
 
-  // Build family context
+  // Build prompt
   let familyContext = '';
   if (members.length > 0) {
-    const adults = members.filter(m => m.role === '大人' || m.role === '高齢者');
     const kids = members.filter(m => m.role === '子供' || m.role === '乳幼児');
+    const adults = members.filter(m => m.role === '大人' || m.role === '高齢者');
     familyContext += `\n家族構成：${members.map(m => `${m.name}(${m.role}${m.age?','+m.age+'歳':''})`).join('、')}`;
     const allergies = members.filter(m => m.allergy).map(m => `${m.name}：${m.allergy}`);
     if (allergies.length) familyContext += `\nアレルギー：${allergies.join(' / ')}`;
@@ -672,7 +668,7 @@ async function getSuggestions() {
     }
   }
 
-  const prompt = `あなたは家族の献立提案アシスタントです。以下の条件で晩ごはんの献立を3つ提案してください。
+  const prompt = `家族の晩ごはんの献立を3つ提案してください。
 
 条件：
 - 気分：${mood.join('、')}
@@ -680,51 +676,59 @@ async function getSuggestions() {
 - その他リクエスト：${extra || 'なし'}
 - 最近食べたもの（なるべく被らないように）：${recent}${familyContext}
 
-以下のJSON形式のみで返してください。マークダウンや説明文は不要です：
-[
-  {
-    "name": "料理名",
-    "desc": "説明（30文字以内）",
-    "tags": ["タグ1", "タグ2"],
-    "kidFriendly": true
-  }
-]
-tagsの例：「時短」「栄養満点」「子供向け」「大人向け」「アレルギー配慮」など。kidFriendlyは子供が食べやすければtrue。`;
+各料理について、料理名・一言説明・おすすめポイントを教えてください。`;
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const sugs = JSON.parse(clean);
+  // Show instruction card
+  document.getElementById('ai-result').innerHTML = `
+    <div class="sug-card">
+      <div class="sug-header">✨ Claudeアプリで提案を受け取る</div>
+      <div style="padding:16px;">
+        <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:14px;">
+          下のボタンを押すとClaudeアプリが開き、家族情報・条件を含んだメッセージが自動でコピーされます。貼り付けて送信してください。
+        </p>
+        <div style="background:var(--bg2);border-radius:var(--rsm);padding:12px;font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:14px;word-break:break-all;" id="prompt-preview">${prompt.replace(/\n/g,'<br>')}</div>
+        <button class="btn" style="margin-bottom:10px;" onclick="copyAndOpen()">📋 コピーしてClaudeを開く</button>
+        <button class="btn btn-outline" onclick="copyPromptOnly()">コピーのみ</button>
+        <div id="copy-msg" style="text-align:center;font-size:12px;color:var(--green);margin-top:8px;"></div>
+      </div>
+    </div>`;
 
-    const hasKids = getMembers().some(m => m.role === '子供' || m.role === '乳幼児');
-    document.getElementById('ai-result').innerHTML = `
-      <div class="sug-card">
-        <div class="sug-header">✨ おすすめ献立 3選${members.length ? ' · 家族構成を考慮' : ''}</div>
-        ${sugs.map((s, i) => `
-          <div class="sug-item">
-            <div class="sug-num">${i+1}</div>
-            <div class="sug-body">
-              <div class="sug-name">${s.name}${hasKids && s.kidFriendly ? ' <span style="font-size:11px;">👦OK</span>' : ''}</div>
-              <div class="sug-desc">${s.desc}</div>
-              ${s.tags && s.tags.length ? `<div class="sug-tags">${s.tags.map(t=>`<span class="sug-tag">${t}</span>`).join('')}</div>` : ''}
-            </div>
-            <button class="sug-add-btn" onclick="addSuggestion('${s.name.replace(/'/g,"\\'")}')">＋記録</button>
-          </div>`).join('')}
-      </div>`;
-  } catch(e) {
-    document.getElementById('ai-result').innerHTML = '';
-    document.getElementById('sug-err').textContent = '提案の取得に失敗しました。もう一度お試しください。';
+  // Store prompt for copy buttons
+  window._currentPrompt = prompt;
+}
+
+function copyAndOpen() {
+  copyToClipboard(window._currentPrompt, () => {
+    document.getElementById('copy-msg').textContent = '✅ コピーしました！Claudeを開きます...';
+    setTimeout(() => {
+      window.open('https://claude.ai', '_blank');
+    }, 800);
+  });
+}
+
+function copyPromptOnly() {
+  copyToClipboard(window._currentPrompt, () => {
+    document.getElementById('copy-msg').textContent = '✅ コピーしました！';
+    setTimeout(() => document.getElementById('copy-msg').textContent = '', 2500);
+  });
+}
+
+function copyToClipboard(text, cb) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(cb).catch(() => fallbackCopy(text, cb));
+  } else {
+    fallbackCopy(text, cb);
   }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(ta);
 }
 
 function addSuggestion(name) {
