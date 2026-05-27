@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="献立ノート">
+<meta name="theme-color" content="#2C2C1E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>献立ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FDFCF8;
+  --bg2: #F4F2EB;
+  --bg3: #EAE7DC;
+  --ink: #2C2C1E;
+  --ink2: #5C5848;
+  --ink3: #9C9888;
+  --accent: #8B6F3E;
+  --accent-bg: #F5EDD8;
+  --green: #4A7C59;
+  --green-bg: #EAF2EC;
+  --blue: #3A5F8A;
+  --blue-bg: #EAF0F8;
+  --red: #A33A2D;
+  --red-bg: #FAECEB;
+  --yellow: #C68D0A;
+  --yellow-bg: #FEF7E0;
+  --purple: #6B4E9B;
+  --purple-bg: #F0EAF8;
+  --border: rgba(44,44,30,0.1);
+  --border2: rgba(44,44,30,0.2);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --r: 16px;
+  --rsm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ── Header ── */
+.header {
+  background: rgba(253,252,248,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: calc(var(--safe-top) + 12px) 20px 12px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.header-inner { display: flex; align-items: center; justify-content: space-between; }
+.header-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 19px; font-weight: 600;
+  color: var(--ink); letter-spacing: 0.04em;
+}
+.header-sub { font-size: 11px; color: var(--ink3); margin-top: 1px; letter-spacing: 0.05em; }
+
+/* ── Scroll area ── */
+.main {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(76px + var(--safe-bottom));
+}
+
+/* ── Tab bar ── */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(253,252,248,0.95);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; padding-bottom: var(--safe-bottom); z-index: 20;
+}
+.tb {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 9px 0 7px; background: none; border: none; cursor: pointer; gap: 3px;
+}
+.tb-icon { font-size: 21px; line-height: 1; transition: transform 0.15s; }
+.tb.active .tb-icon { transform: scale(1.12); }
+.tb-lbl { font-size: 10px; color: var(--ink3); letter-spacing: 0.04em; font-family: 'Noto Sans JP', sans-serif; }
+.tb.active .tb-lbl { color: var(--accent); font-weight: 500; }
+
+/* ── Pages ── */
+.page { display: none; padding: 20px; }
+.page.active { display: block; }
+
+/* ── Section title ── */
+.stitle {
+  font-size: 11px; font-weight: 500; color: var(--ink3);
+  letter-spacing: 0.12em; margin: 24px 0 10px;
+}
+.stitle:first-child { margin-top: 0; }
+
+/* ── Card ── */
+.card {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+}
+
+/* ── Form ── */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  display: block; font-size: 11px; color: var(--ink3);
+  letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 500;
+}
+input[type=text], input[type=date], input[type=number], select, textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--rsm); padding: 11px 14px;
+  font-size: 16px; font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink); outline: none;
+  -webkit-appearance: none; appearance: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent); background: white;
+}
+textarea { min-height: 72px; resize: none; line-height: 1.6; }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239C9888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+}
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── Buttons ── */
+.btn {
+  width: 100%; padding: 14px; background: var(--ink); color: white;
+  border: none; border-radius: var(--rsm);
+  font-size: 15px; font-family: 'Noto Sans JP', sans-serif; font-weight: 500;
+  cursor: pointer; letter-spacing: 0.05em;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:active { opacity: 0.8; transform: scale(0.98); }
+.btn-sm {
+  padding: 7px 14px; font-size: 13px; width: auto;
+  background: var(--ink); color: white; border: none;
+  border-radius: var(--rsm); cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+}
+.btn-outline {
+  background: transparent; color: var(--ink); border: 1px solid var(--border2);
+}
+.btn-danger { background: var(--red); }
+.btn-accent { background: var(--accent); }
+
+/* ── Chips ── */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.chip {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border2);
+  font-size: 13px; background: var(--bg2); color: var(--ink2);
+  cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans JP', sans-serif;
+  user-select: none;
+}
+.chip.on { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; font-size: 11px;
+  padding: 3px 9px; border-radius: 999px; flex-shrink: 0;
+}
+.badge-home { background: var(--green-bg); color: var(--green); }
+.badge-out  { background: var(--blue-bg);  color: var(--blue); }
+.badge-take { background: var(--accent-bg); color: var(--accent); }
+.badge-allergy { background: var(--red-bg); color: var(--red); font-size: 10px; padding: 2px 7px; }
+
+/* ── History ── */
+.day-label {
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  color: var(--ink3); margin-bottom: 8px; letter-spacing: 0.05em;
+}
+.meal-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.meal-item:last-child { border-bottom: none; padding-bottom: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-m { background: #E9A84C; }
+.dot-l { background: var(--green); }
+.dot-d { background: var(--blue); }
+.meal-info { flex: 1; min-width: 0; }
+.meal-name-t { font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meal-meta-t { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+/* ── Family members ── */
+.member-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.member-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 15px; font-weight: 500; color: var(--ink); }
+.member-detail { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.member-allergies { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.member-del {
+  background: none; border: 1px solid var(--border2); color: var(--ink3);
+  border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; flex-shrink: 0;
+}
+.member-del:active { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+/* ── AI result ── */
+.sug-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--r);
+  overflow: hidden; margin-bottom: 10px;
+}
+.sug-header {
+  background: var(--bg2); padding: 10px 14px;
+  font-size: 11px; font-weight: 500; color: var(--ink3); letter-spacing: 0.08em;
+}
+.sug-item {
+  padding: 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.sug-item:last-child { border-bottom: none; }
+.sug-num {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500; color: var(--ink3); flex-shrink: 0;
+}
+.sug-body { flex: 1; }
+.sug-name { font-size: 15px; color: var(--ink); font-weight: 500; }
+.sug-desc { font-size: 12px; color: var(--ink2); margin-top: 3px; line-height: 1.5; }
+.sug-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.sug-tag {
+  font-size: 10px; padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-bg); color: var(--accent);
+}
+.sug-add-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; color: var(--ink2); cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; flex-shrink: 0;
+  align-self: center;
+}
+.sug-add-btn:active { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+
+.loading-msg {
+  text-align: center; padding: 2rem 0; color: var(--ink3); font-size: 14px;
+}
+.loading-dot { display: inline-block; animation: blink 1.2s infinite; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+
+.empty-msg {
+  text-align: center; padding: 3rem 0; color: var(--ink3); font-size: 14px;
+}
+.empty-icon { font-size: 36px; display: block; margin-bottom: 10px; }
+
+.toast {
+  position: fixed; top: calc(var(--safe-top) + 70px); left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: white; padding: 10px 20px;
+  border-radius: 999px; font-size: 13px; z-index: 100;
+  opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+.err-msg { font-size: 12px; color: var(--red); margin-top: 8px; text-align: center; }
+
+/* modal overlay */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 50;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.modal-bg.open {
+  display: flex;
+  pointer-events: auto;
+}
+.modal {
+  background: var(--bg); border-radius: var(--r) var(--r) 0 0;
+  width: 100%; max-width: 430px; padding: 20px 20px calc(20px + var(--safe-bottom));
+  max-height: 85vh; overflow-y: auto;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.modal-title {
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
+  font-weight: 600; margin-bottom: 16px; color: var(--ink);
+}
+
+/* ── NEW: Favorites ── */
+.fav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.fav-item:last-child { border-bottom: none; padding-bottom: 0; }
+.fav-icon { font-size: 20px; flex-shrink: 0; }
+.fav-info { flex: 1; min-width: 0; }
+.fav-name { font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-meta { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.fav-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.fav-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 8px;
+  padding: 5px 10px; font-size: 11px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; color: var(--ink3);
+}
+.fav-btn:active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.fav-del-btn:active { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.fav-star-btn { font-size: 16px; background: none; border: none; cursor: pointer; padding: 4px; }
+
+/* ── NEW: Shopping List ── */
+.shop-section-title {
+  font-size: 12px; font-weight: 500; color: var(--ink3);
+  letter-spacing: 0.08em; margin: 14px 0 6px; padding: 0 2px;
+}
+.shop-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.shop-item:last-child { border-bottom: none; }
+.shop-check {
+  width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: all 0.15s; background: white;
+}
+.shop-check.checked { background: var(--green); border-color: var(--green); }
+.shop-check.checked::after { content: '✓'; color: white; font-size: 13px; }
+.shop-name { flex: 1; font-size: 14px; color: var(--ink); transition: all 0.15s; }
+.shop-name.checked { text-decoration: line-through; color: var(--ink3); }
+.shop-cat {
+  font-size: 10px; padding: 2px 7px; border-radius: 999px;
+  background: var(--bg2); color: var(--ink3); flex-shrink: 0;
+}
+.shop-add-row { display: flex; gap: 8px; margin-top: 10px; }
+.shop-add-row input { flex: 1; font-size: 14px; padding: 9px 12px; }
+.shop-add-btn {
+  padding: 9px 16px; background: var(--ink); color: white; border: none;
+  border-radius: var(--rsm); font-size: 14px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
+}
+.shop-del-btn {
+  background: none; border: none; color: var(--ink3); font-size: 16px;
+  cursor: pointer; padding: 2px 4px; flex-shrink: 0;
+}
+.shop-progress {
+  background: var(--bg3); border-radius: 999px; height: 6px; margin-bottom: 12px; overflow: hidden;
+}
+.shop-progress-bar {
+  height: 100%; background: var(--green); border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* ── NEW: Weekly Planner ── */
+.week-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.week-nav-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 8px;
+  padding: 6px 12px; font-size: 14px; cursor: pointer; color: var(--ink2);
+}
+.week-nav-label {
+  font-family: 'Noto Serif JP', serif; font-size: 14px; color: var(--ink); font-weight: 500;
+}
+.week-day-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--r);
+  margin-bottom: 10px; overflow: hidden;
+}
+.week-day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.week-day-label {
+  font-size: 13px; font-weight: 500; color: var(--ink); letter-spacing: 0.04em;
+}
+.week-day-label.today { color: var(--accent); }
+.week-meal-row {
+  display: flex; align-items: center; padding: 10px 14px;
+  border-bottom: 1px solid var(--border); gap: 10px;
+}
+.week-meal-row:last-child { border-bottom: none; }
+.week-meal-type { font-size: 11px; color: var(--ink3); width: 32px; flex-shrink: 0; }
+.week-meal-name { flex: 1; font-size: 14px; color: var(--ink); }
+.week-meal-empty { flex: 1; font-size: 13px; color: var(--ink3); font-style: italic; }
+.week-add-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 8px;
+  padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--ink3);
+  font-family: 'Noto Sans JP', sans-serif; flex-shrink: 0;
+}
+.week-add-btn:active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+.week-del-btn {
+  background: none; border: none; color: var(--ink3); font-size: 14px;
+  cursor: pointer; padding: 2px; flex-shrink: 0;
+}
+
+/* ── NEW: Nutrition Balance ── */
+.nutri-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px; margin-bottom: 12px;
+}
+.nutri-title {
+  font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+.nutri-bar-row { margin-bottom: 12px; }
+.nutri-bar-label {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 5px;
+}
+.nutri-bar-name { font-size: 12px; color: var(--ink2); }
+.nutri-bar-val { font-size: 11px; color: var(--ink3); }
+.nutri-bar-bg { background: var(--bg3); border-radius: 999px; height: 8px; overflow: hidden; }
+.nutri-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.nutri-summary {
+  background: var(--bg2); border-radius: var(--rsm); padding: 10px 14px; margin-top: 12px;
+  font-size: 12px; color: var(--ink2); line-height: 1.7;
+}
+.nutri-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500;
+}
+.nutri-good { background: var(--green-bg); color: var(--green); }
+.nutri-warn { background: var(--yellow-bg); color: var(--yellow); }
+.nutri-bad  { background: var(--red-bg); color: var(--red); }
+.nutri-period-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.nutri-tab {
+  flex: 1; padding: 7px; border: 1px solid var(--border2); border-radius: var(--rsm);
+  background: var(--bg2); font-size: 12px; color: var(--ink3); cursor: pointer;
+  text-align: center; font-family: 'Noto Sans JP', sans-serif;
+}
+.nutri-tab.on { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ── meal-item fav button ── */
+.meal-fav-btn {
+  background: none; border: none; font-size: 16px; cursor: pointer;
+  padding: 2px; flex-shrink: 0; opacity: 0.5; transition: opacity 0.15s;
+}
+.meal-fav-btn.faved { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">献立ノート</div>
+      <div class="header-sub" id="hdr-family">家族情報を登録してください</div>
+    </div>
+    <div id="hdr-date" style="font-size:12px;color:var(--ink3);letter-spacing:0.05em;"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- 記録 -->
+  <div id="p-record" class="page active">
+    <div class="stitle">今日の献立を記録</div>
+    <div class="card">
+      <div class="field">
+        <label>日付</label>
+        <input type="date" id="r-date">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>食事</label>
+          <select id="r-type">
+            <option value="夕食">🌙 夕食</option>
+            <option value="朝食">☀️ 朝食</option>
+            <option value="昼食">🌤 昼食</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>調理</label>
+          <select id="r-cook">
+            <option value="自炊">🏠 自炊</option>
+            <option value="外食">🍽 外食</option>
+            <option value="テイクアウト">🥡 テイクアウト</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>料理名</label>
+        <input type="text" id="r-name" placeholder="例：牛丼、鶏の唐揚げ">
+      </div>
+      <div class="field">
+        <label>メモ（任意）</label>
+        <textarea id="r-memo" placeholder="味の感想や次回へのメモ..."></textarea>
+      </div>
+      <button class="btn" onclick="saveRecord()">💾 保存する</button>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div id="p-history" class="page">
+    <div class="stitle">過去の献立</div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- AI提案 -->
+  <div id="p-suggest" class="page">
+    <div class="stitle">条件を選ぶ</div>
+    <div class="card">
+      <div class="field">
+        <label>気分</label>
+        <div class="chips" id="c-mood">
+          <div class="chip on" data-g="mood">がっつり</div>
+          <div class="chip" data-g="mood">さっぱり</div>
+          <div class="chip" data-g="mood">温かいもの</div>
+          <div class="chip" data-g="mood">お手軽に</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>ジャンル（複数可）</label>
+        <div class="chips" id="c-genre">
+          <div class="chip on" data-g="genre">和食</div>
+          <div class="chip" data-g="genre">洋食</div>
+          <div class="chip" data-g="genre">中華</div>
+          <div class="chip on" data-g="genre">丼もの</div>
+          <div class="chip" data-g="genre">麺類</div>
+          <div class="chip" data-g="genre">なんでも</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>その他リクエスト（任意）</label>
+        <input type="text" id="extra-req" placeholder="例：冷蔵庫に豚肉がある">
+      </div>
+      <button class="btn" onclick="getSuggestions()">✨ 提案してもらう</button>
+      <div id="sug-err" class="err-msg"></div>
+    </div>
+    <div id="ai-result"></div>
+  </div>
+
+  <!-- お気に入り（NEW） -->
+  <div id="p-favorites" class="page">
+    <div class="stitle">お気に入り献立</div>
+    <div id="fav-list"></div>
+  </div>
+
+  <!-- 買い物リスト（NEW） -->
+  <div id="p-shopping" class="page">
+    <div class="stitle">買い物リスト</div>
+    <div class="card">
+      <div id="shop-progress-wrap" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--ink3);">購入済み</span>
+          <span style="font-size:12px;color:var(--green);font-weight:500;" id="shop-progress-label">0 / 0</span>
+        </div>
+        <div class="shop-progress"><div class="shop-progress-bar" id="shop-progress-bar" style="width:0%"></div></div>
+      </div>
+      <div id="shop-list"></div>
+      <div class="shop-add-row">
+        <input type="text" id="shop-input" placeholder="食材を追加..." onkeydown="if(event.key==='Enter')addShopItem()">
+        <button class="shop-add-btn" onclick="addShopItem()">＋ 追加</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-outline" style="font-size:13px;padding:10px;" onclick="clearCheckedShop()">✅ 購入済みを削除</button>
+      <button class="btn btn-outline" style="font-size:13px;padding:10px;" onclick="clearAllShop()">🗑 全て削除</button>
+    </div>
+  </div>
+
+  <!-- 週間プランナー（NEW） -->
+  <div id="p-weekly" class="page">
+    <div class="stitle">週間献立プランナー</div>
+    <div class="week-nav">
+      <button class="week-nav-btn" onclick="changeWeek(-1)">＜ 前の週</button>
+      <div class="week-nav-label" id="week-label"></div>
+      <button class="week-nav-btn" onclick="changeWeek(1)">次の週 ＞</button>
+    </div>
+    <div id="weekly-list"></div>
+  </div>
+
+  <!-- 栄養バランス（NEW） -->
+  <div id="p-nutrition" class="page">
+    <div class="stitle">栄養バランス</div>
+    <div class="nutri-period-tabs">
+      <div class="nutri-tab on" onclick="switchNutriTab('today', this)">今日</div>
+      <div class="nutri-tab" onclick="switchNutriTab('week', this)">今週</div>
+      <div class="nutri-tab" onclick="switchNutriTab('month', this)">今月</div>
+    </div>
+    <div id="nutri-content"></div>
+  </div>
+
+  <!-- 家族 -->
+  <div id="p-family" class="page">
+    <div class="stitle">家族メンバー</div>
+    <div id="member-list"></div>
+    <button class="btn btn-outline" onclick="openAddMember()" style="margin-top:4px;">＋ メンバーを追加</button>
+    <div class="stitle" style="margin-top:28px;">家族全体のアレルギー</div>
+    <div class="card">
+      <div class="field">
+        <label>共通で除外する食材</label>
+        <input type="text" id="family-allergy" placeholder="例：えび、そば（カンマ区切り）">
+      </div>
+      <button class="btn" onclick="saveFamilyAllergy()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tabbar" id="tabbar">
+  <button class="tb active" onclick="switchPage('record',this)">
+    <span class="tb-icon">✏️</span>
+    <span class="tb-lbl">記録</span>
+  </button>
+  <button class="tb" onclick="switchPage('history',this)">
+    <span class="tb-icon">📅</span>
+    <span class="tb-lbl">履歴</span>
+  </button>
+  <button class="tb" onclick="switchPage('suggest',this)">
+    <span class="tb-icon">✨</span>
+    <span class="tb-lbl">AI提案</span>
+  </button>
+  <button class="tb" id="more-tab" onclick="showMoreMenu()">
+    <span class="tb-icon">☰</span>
+    <span class="tb-lbl">その他</span>
+  </button>
+
+</div>
+
+<!-- More menu modal -->
+<div class="modal-bg" id="more-menu-bg" onclick="closeMoreMenu(event)">
+  <div class="modal" style="padding-bottom:calc(16px + var(--safe-bottom));">
+    <div class="modal-title" style="font-size:15px;margin-bottom:12px;">メニュー</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <button class="card" style="padding:16px;text-align:left;cursor:pointer;border:none;background:white;" onclick="switchPageFromMenu('favorites')">
+        <div style="font-size:24px;margin-bottom:6px;">⭐️</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">お気に入り</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;">保存した献立</div>
+      </button>
+      <button class="card" style="padding:16px;text-align:left;cursor:pointer;border:none;background:white;" onclick="switchPageFromMenu('shopping')">
+        <div style="font-size:24px;margin-bottom:6px;">🛒</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">買い物リスト</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;">食材の管理</div>
+      </button>
+      <button class="card" style="padding:16px;text-align:left;cursor:pointer;border:none;background:white;" onclick="switchPageFromMenu('weekly')">
+        <div style="font-size:24px;margin-bottom:6px;">📆</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">週間プランナー</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;">1週間の献立</div>
+      </button>
+      <button class="card" style="padding:16px;text-align:left;cursor:pointer;border:none;background:white;" onclick="switchPageFromMenu('nutrition')">
+        <div style="font-size:24px;margin-bottom:6px;">🥗</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">栄養バランス</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;">食事の分析</div>
+      </button>
+    </div>
+    <button class="card" style="padding:14px 16px;text-align:left;cursor:pointer;border:none;background:white;width:100%;display:flex;align-items:center;gap:12px;" onclick="switchPageFromMenu('family')">
+      <span style="font-size:22px;">👨‍👩‍👧</span>
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--ink);">家族設定</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:1px;">メンバーとアレルギーの管理</div>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Add member modal -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">メンバーを追加</div>
+    <div class="field">
+      <label>名前</label>
+      <input type="text" id="m-name" placeholder="例：お父さん、太郎">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>年齢</label>
+        <input type="number" id="m-age" placeholder="例：35" min="0" max="120">
+      </div>
+      <div class="field">
+        <label>区分</label>
+        <select id="m-role">
+          <option value="大人">大人</option>
+          <option value="子供">子供</option>
+          <option value="高齢者">高齢者</option>
+          <option value="乳幼児">乳幼児</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>アレルギー・食べられないもの（カンマ区切り）</label>
+      <input type="text" id="m-allergy" placeholder="例：卵、牛乳、ピーナッツ">
+    </div>
+    <div class="field">
+      <label>好き嫌い・メモ（任意）</label>
+      <textarea id="m-note" placeholder="例：辛いものが苦手、野菜が嫌い"></textarea>
+    </div>
+    <button class="btn" onclick="addMember()" style="margin-bottom:10px;">追加する</button>
+    <button class="btn btn-outline" onclick="closeModalDirect()">キャンセル</button>
+  </div>
+</div>
+
+<!-- Week meal add modal -->
+<div class="modal-bg" id="week-modal-bg" onclick="closeWeekModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="week-modal-title">献立を追加</div>
+    <div class="field">
+      <label>料理名</label>
+      <input type="text" id="wm-name" placeholder="例：カレーライス">
+    </div>
+    <div class="field">
+      <label>メモ（任意）</label>
+      <input type="text" id="wm-memo" placeholder="例：外食、テイクアウト">
+    </div>
+    <button class="btn" onclick="saveWeekMeal()" style="margin-bottom:10px;">追加する</button>
+    <button class="btn btn-outline" onclick="closeWeekModalDirect()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+// ── Storage helpers ──
+const DB = {
+  get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+const RECORDS_KEY  = 'kondate_records';
+const MEMBERS_KEY  = 'kondate_members';
+const FALLERGY_KEY = 'kondate_fallergy';
+const FAVS_KEY     = 'kondate_favorites';
+const SHOP_KEY     = 'kondate_shopping';
+const WEEKLY_KEY   = 'kondate_weekly';
+
+function getRecords()      { return DB.get(RECORDS_KEY)  || []; }
+function getMembers()      { return DB.get(MEMBERS_KEY)  || []; }
+function getFamilyAllergy(){ return DB.get(FALLERGY_KEY) || ''; }
+function getFavorites()    { return DB.get(FAVS_KEY)     || []; }
+function getShopItems()    { return DB.get(SHOP_KEY)     || []; }
+function getWeeklyPlan()   { return DB.get(WEEKLY_KEY)   || {}; }
+
+// ── Avatars ──
+const AVATARS = { '大人':'🧑', '子供':'👧', '高齢者':'👴', '乳幼児':'👶' };
+
+// ── Header ──
+function updateHeader() {
+  const members = getMembers();
+  const el = document.getElementById('hdr-family');
+  if (members.length === 0) {
+    el.textContent = '家族情報を登録してください';
+  } else {
+    const adults = members.filter(m => m.role === '大人' || m.role === '高齢者').length;
+    const kids   = members.filter(m => m.role === '子供' || m.role === '乳幼児').length;
+    let parts = [];
+    if (adults > 0) parts.push(`大人${adults}人`);
+    if (kids   > 0) parts.push(`子供${kids}人`);
+    el.textContent = parts.join('・') + ' の献立';
+  }
+  const today = new Date();
+  document.getElementById('hdr-date').textContent =
+    `${today.getMonth()+1}/${today.getDate()}（${'日月火水木金土'[today.getDay()]}）`;
+}
+
+// ── Tab switch ──
+function switchPage(name, btn) {
+
+  // 開いているモーダルを閉じる
+  document.getElementById('more-menu-bg').classList.remove('open');
+  document.getElementById('week-modal-bg').classList.remove('open');
+  document.getElementById('modal-bg').classList.remove('open');
+
+  // ページ切り替え
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+  });
+
+  // タブ active 初期化
+  document.querySelectorAll('.tb').forEach(b => {
+    b.classList.remove('active');
+  });
+
+  // 対象ページ表示
+  const targetPage = document.getElementById('p-' + name);
+
+  if (targetPage) {
+    targetPage.classList.add('active');
+  }
+
+  // タブ active 制御
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const moreTab = document.getElementById('more-tab');
+
+    if (moreTab) {
+      moreTab.classList.add('active');
+    }
+  }
+
+  // ページごとの描画
+  if (name === 'history') renderHistory();
+  if (name === 'family') renderMembers();
+  if (name === 'favorites') renderFavorites();
+  if (name === 'shopping') renderShopList();
+  if (name === 'weekly') renderWeekly();
+  if (name === 'nutrition') renderNutrition(currentNutriTab || 'today');
+}
+
+// ── More menu ──
+function showMoreMenu() {
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tb:nth-child(4)').classList.add('active');
+  document.getElementById('more-menu-bg').classList.add('open');
+}
+function closeMoreMenu(e) {
+  if (e.target === document.getElementById('more-menu-bg')) {
+    document.getElementById('more-menu-bg').classList.remove('open');
+  }
+}
+function switchPageFromMenu(name) {
+  document.getElementById('more-menu-bg').classList.remove('open');
+  switchPage(name, null);
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Record ──
+function saveRecord() {
+  const date = document.getElementById('r-date').value;
+  const name = document.getElementById('r-name').value.trim();
+  if (!date || !name) { showToast('日付と料理名を入力してください'); return; }
+  const rec = {
+    id: Date.now(), date,
+    type: document.getElementById('r-type').value,
+    cook: document.getElementById('r-cook').value,
+    name,
+    memo: document.getElementById('r-memo').value.trim()
+  };
+  const arr = getRecords();
+  arr.unshift(rec);
+  DB.set(RECORDS_KEY, arr);
+  document.getElementById('r-name').value = '';
+  document.getElementById('r-memo').value = '';
+  showToast('✅ 保存しました！');
+}
+
+// ── History ──
+function renderHistory() {
+  const arr = getRecords();
+  const favs = getFavorites().map(f => f.name);
+  const el = document.getElementById('history-list');
+  if (!arr.length) {
+    el.innerHTML = '<div class="empty-msg"><span class="empty-icon">📓</span>まだ記録がありません</div>';
+    return;
+  }
+  const grouped = {};
+  arr.forEach(r => { (grouped[r.date] = grouped[r.date] || []).push(r); });
+  const dotMap   = { '朝食':'dot-m', '昼食':'dot-l', '夕食':'dot-d' };
+  const badgeMap = { '自炊':'badge-home', '外食':'badge-out', 'テイクアウト':'badge-take' };
+  el.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(date => {
+    const d = new Date(date + 'T00:00:00');
+    const label = `${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
+    const rows = grouped[date].map(r => {
+      const isFav = favs.includes(r.name);
+      return `
+      <div class="meal-item">
+        <div class="dot ${dotMap[r.type]||'dot-d'}"></div>
+        <div class="meal-info">
+          <div class="meal-name-t">${r.name}</div>
+          <div class="meal-meta-t">${r.type}${r.memo ? ' · ' + r.memo : ''}</div>
+        </div>
+        <button class="meal-fav-btn ${isFav?'faved':''}" onclick="toggleFavFromHistory('${r.name.replace(/'/g,"\\'")}', this)" title="お気に入り">${isFav?'⭐️':'☆'}</button>
+        <span class="badge ${badgeMap[r.cook]||'badge-home'}">${r.cook}</span>
+      </div>`;
+    }).join('');
+    return `<div class="card" style="padding:12px 16px;"><div class="day-label">${label}</div>${rows}</div>`;
+  }).join('');
+}
+
+// ── Favorites ──
+function toggleFavFromHistory(name, btn) {
+  const favs = getFavorites();
+  const idx = favs.findIndex(f => f.name === name);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    DB.set(FAVS_KEY, favs);
+    btn.textContent = '☆'; btn.classList.remove('faved');
+    showToast('お気に入りから削除しました');
+  } else {
+    favs.unshift({ id: Date.now(), name, memo: '', addedAt: new Date().toISOString().split('T')[0] });
+    DB.set(FAVS_KEY, favs);
+    btn.textContent = '⭐️'; btn.classList.add('faved');
+    showToast(`⭐️ 「${name}」をお気に入りに追加しました`);
+  }
+}
+
+function addToFavorites(name) {
+  const favs = getFavorites();
+  if (favs.find(f => f.name === name)) { showToast('すでにお気に入りに追加済みです'); return; }
+  favs.unshift({ id: Date.now(), name, memo: '', addedAt: new Date().toISOString().split('T')[0] });
+  DB.set(FAVS_KEY, favs);
+  showToast(`⭐️ 「${name}」をお気に入りに追加しました`);
+}
+
+function deleteFavorite(id) {
+  const favs = getFavorites().filter(f => f.id !== id);
+  DB.set(FAVS_KEY, favs);
+  renderFavorites();
+  showToast('削除しました');
+}
+
+function renderFavorites() {
+  const favs = getFavorites();
+  const el = document.getElementById('fav-list');
+  if (!favs.length) {
+    el.innerHTML = '<div class="empty-msg"><span class="empty-icon">⭐️</span>お気に入りがありません<br><span style="font-size:12px;margin-top:6px;display:block;">履歴の☆ボタンから追加できます</span></div>';
+    return;
+  }
+  el.innerHTML = favs.map(f => `
+    <div class="card" style="padding:12px 16px;">
+      <div class="fav-item">
+        <div class="fav-icon">⭐️</div>
+        <div class="fav-info">
+          <div class="fav-name">${f.name}</div>
+          <div class="fav-meta">${f.addedAt} 追加</div>
+        </div>
+        <div class="fav-actions">
+          <button class="fav-btn" onclick="addSuggestion('${f.name.replace(/'/g,"\\'")}')">＋記録</button>
+          <button class="fav-btn fav-del-btn" onclick="deleteFavorite(${f.id})">削除</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Shopping List ──
+function renderShopList() {
+  const items = getShopItems();
+  const el = document.getElementById('shop-list');
+  const progressWrap = document.getElementById('shop-progress-wrap');
+
+  if (!items.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--ink3);font-size:14px;">食材を追加してください</div>';
+    progressWrap.style.display = 'none';
+    return;
+  }
+
+  progressWrap.style.display = 'block';
+  const checked = items.filter(i => i.checked).length;
+  const pct = Math.round(checked / items.length * 100);
+  document.getElementById('shop-progress-label').textContent = `${checked} / ${items.length}`;
+  document.getElementById('shop-progress-bar').style.width = pct + '%';
+
+  el.innerHTML = items.map((item, idx) => `
+    <div class="shop-item">
+      <div class="shop-check ${item.checked ? 'checked' : ''}" onclick="toggleShopItem(${idx})"></div>
+      <div class="shop-name ${item.checked ? 'checked' : ''}">${item.name}</div>
+      ${item.cat ? `<span class="shop-cat">${item.cat}</span>` : ''}
+      <button class="shop-del-btn" onclick="deleteShopItem(${idx})">✕</button>
+    </div>`).join('');
+}
+
+function addShopItem() {
+  const input = document.getElementById('shop-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const items = getShopItems();
+  items.push({ id: Date.now(), name, checked: false, cat: guessCategory(name) });
+  DB.set(SHOP_KEY, items);
+  input.value = '';
+  renderShopList();
+}
+
+function guessCategory(name) {
+  const cats = {
+    '野菜': ['キャベツ','にんじん','玉ねぎ','たまねぎ','じゃがいも','なす','きゅうり','トマト','ほうれん草','ブロッコリー','大根','白菜','もやし','ねぎ','ピーマン','パプリカ','レタス','ごぼう'],
+    '肉': ['豚肉','鶏肉','牛肉','ひき肉','豚','鶏','牛','ベーコン','ハム','ソーセージ','鶏もも','鶏むね','豚バラ','豚ロース'],
+    '魚': ['鮭','さば','まぐろ','えび','いか','あじ','さんま','ぶり','たら','シーフード'],
+    '卵・乳': ['卵','牛乳','チーズ','バター','ヨーグルト','生クリーム'],
+    '調味料': ['醤油','みりん','砂糖','塩','油','酒','だし','味噌','マヨネーズ','ケチャップ','ドレッシング','酢','ごま油','オリーブオイル'],
+    '主食': ['米','パン','パスタ','うどん','そば','ラーメン','小麦粉']
+  };
+  for (const [cat, words] of Object.entries(cats)) {
+    if (words.some(w => name.includes(w))) return cat;
+  }
+  return '';
+}
+
+function toggleShopItem(idx) {
+  const items = getShopItems();
+  items[idx].checked = !items[idx].checked;
+  DB.set(SHOP_KEY, items);
+  renderShopList();
+}
+
+function deleteShopItem(idx) {
+  const items = getShopItems();
+  items.splice(idx, 1);
+  DB.set(SHOP_KEY, items);
+  renderShopList();
+}
+
+function clearCheckedShop() {
+  const items = getShopItems().filter(i => !i.checked);
+  DB.set(SHOP_KEY, items);
+  renderShopList();
+  showToast('購入済みを削除しました');
+}
+
+function clearAllShop() {
+  DB.set(SHOP_KEY, []);
+  renderShopList();
+  showToast('リストを全て削除しました');
+}
+
+// ── Weekly Planner ──
+let weekOffset = 0;
+let weekModalTarget = null;
+
+function getWeekStart(offset = 0) {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() - day + (offset * 7));
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function changeWeek(dir) {
+  weekOffset += dir;
+  renderWeekly();
+}
+
+function renderWeekly() {
+  const weekStart = getWeekStart(weekOffset);
+  const weekEnd   = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  document.getElementById('week-label').textContent = `${fmt(weekStart)} 〜 ${fmt(weekEnd)}`;
+
+  const plan = getWeeklyPlan();
+  const dayNames = ['日','月','火','水','木','金','土'];
+  const mealTypes = [
+    { key: 'breakfast', label: '朝食', icon: '☀️' },
+    { key: 'lunch',     label: '昼食', icon: '🌤' },
+    { key: 'dinner',    label: '夕食', icon: '🌙' },
+  ];
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const isToday = dateStr === todayStr;
+    const dayPlan = plan[dateStr] || {};
+
+    const rows = mealTypes.map(mt => {
+      const meal = dayPlan[mt.key];
+      if (meal) {
+        return `<div class="week-meal-row">
+          <div class="week-meal-type">${mt.icon}</div>
+          <div class="week-meal-name">${meal.name}${meal.memo ? '<span style="font-size:11px;color:var(--ink3);margin-left:4px;">'+meal.memo+'</span>' : ''}</div>
+          <button class="week-del-btn" onclick="deleteWeekMeal('${dateStr}','${mt.key}')">✕</button>
+        </div>`;
+      } else {
+        return `<div class="week-meal-row">
+          <div class="week-meal-type">${mt.icon}</div>
+          <div class="week-meal-empty">未定</div>
+          <button class="week-add-btn" onclick="openWeekModal('${dateStr}','${mt.key}','${mt.label}')">＋</button>
+        </div>`;
+      }
+    }).join('');
+
+    html += `<div class="week-day-card">
+      <div class="week-day-header">
+        <div class="week-day-label ${isToday?'today'}">${d.getMonth()+1}/${d.getDate()}（${dayNames[d.getDay()]}）${isToday?' 🔵':''}</div>
+      </div>
+      ${rows}
+    </div>`;
+  }
+  document.getElementById('weekly-list').innerHTML = html;
+}
+
+function openWeekModal(dateStr, mealKey, mealLabel) {
+  weekModalTarget = { dateStr, mealKey };
+  document.getElementById('week-modal-title').textContent = `${mealLabel}の献立を追加`;
+  document.getElementById('wm-name').value = '';
+  document.getElementById('wm-memo').value = '';
+  document.getElementById('week-modal-bg').classList.add('open');
+}
+
+function closeWeekModal(e) {
+  if (e.target === document.getElementById('week-modal-bg')) closeWeekModalDirect();
+}
+function closeWeekModalDirect() {
+  document.getElementById('week-modal-bg').classList.remove('open');
+  weekModalTarget = null;
+}
+
+function saveWeekMeal() {
+  const name = document.getElementById('wm-name').value.trim();
+  if (!name || !weekModalTarget) { showToast('料理名を入力してください'); return; }
+  const plan = getWeeklyPlan();
+  if (!plan[weekModalTarget.dateStr]) plan[weekModalTarget.dateStr] = {};
+  plan[weekModalTarget.dateStr][weekModalTarget.mealKey] = {
+    name,
+    memo: document.getElementById('wm-memo').value.trim()
+  };
+  DB.set(WEEKLY_KEY, plan);
+  closeWeekModalDirect();
+  renderWeekly();
+  showToast(`「${name}」を追加しました`);
+}
+
+function deleteWeekMeal(dateStr, mealKey) {
+  const plan = getWeeklyPlan();
+  if (plan[dateStr]) { delete plan[dateStr][mealKey]; }
+  DB.set(WEEKLY_KEY, plan);
+  renderWeekly();
+  showToast('削除しました');
+}
+
+// ── Nutrition Balance ──
+let currentNutriTab = 'today';
+
+function switchNutriTab(tab, btn) {
+  currentNutriTab = tab;
+  document.querySelectorAll('.nutri-tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  renderNutrition(tab);
+}
+
+// Nutrition category definitions
+const NUTRI_CATS = {
+  '主食':    { color: '#E9A84C', keywords: ['ご飯','ライス','パスタ','うどん','そば','ラーメン','パン','チャーハン','丼','おにぎり','リゾット','ピラフ','焼きそば','ビーフン'] },
+  '主菜':    { color: '#4A7C59', keywords: ['肉','鶏','豚','牛','魚','鮭','さば','エビ','唐揚げ','ステーキ','カツ','焼き魚','刺身','ハンバーグ','煮魚','炒め','卵','目玉焼き','オムレツ'] },
+  '副菜':    { color: '#3A5F8A', keywords: ['サラダ','野菜','おひたし','煮物','漬物','きんぴら','ポテト','じゃがいも','人参','キャベツ','ほうれん草','ブロッコリー','浅漬け','ナムル'] },
+  '汁物':    { color: '#8B6F3E', keywords: ['スープ','味噌汁','みそ汁','豚汁','シチュー','カレー','鍋','ラーメン','うどん','そば'] },
+  '乳製品等':{ color: '#9C9888', keywords: ['チーズ','ヨーグルト','牛乳','豆腐','豆乳','みそ','納豆','乳'] },
+};
+
+function analyzeNutrition(records) {
+  const counts = { '主食':0, '主菜':0, '副菜':0, '汁物':0, '乳製品等':0 };
+  const total = records.length;
+  if (total === 0) return { counts, total, score: 0 };
+
+  records.forEach(r => {
+    for (const [cat, { keywords }] of Object.entries(NUTRI_CATS)) {
+      if (keywords.some(k => r.name.includes(k))) {
+        counts[cat]++;
+        break;
+      }
+    }
+  });
+
+  // Score: how balanced the distribution is (0-100)
+  const vals = Object.values(counts);
+  const max = Math.max(...vals) || 1;
+  const balance = vals.reduce((s, v) => s + (v / max), 0) / vals.length;
+  const score = Math.round(balance * 100);
+
+  return { counts, total, score };
+}
+
+function getNutriRecords(period) {
+  const all = getRecords();
+  const now = new Date();
+  if (period === 'today') {
+    const today = now.toISOString().split('T')[0];
+    return all.filter(r => r.date === today);
+  } else if (period === 'week') {
+    const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+    return all.filter(r => new Date(r.date + 'T00:00:00') >= start);
+  } else {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return all.filter(r => new Date(r.date + 'T00:00:00') >= start);
+  }
+}
+
+function renderNutrition(period) {
+  const records = getNutriRecords(period);
+  const { counts, total, score } = analyzeNutrition(records);
+  const el = document.getElementById('nutri-content');
+
+  if (total === 0) {
+    el.innerHTML = `<div class="empty-msg"><span class="empty-icon">🥗</span>この期間の記録がありません</div>`;
+    return;
+  }
+
+  const periodLabel = period === 'today' ? '今日' : period === 'week' ? '今週' : '今月';
+  const scoreClass = score >= 70 ? 'nutri-good' : score >= 40 ? 'nutri-warn' : 'nutri-bad';
+  const scoreLabel = score >= 70 ? '良好' : score >= 40 ? '普通' : '偏り気味';
+
+  const bars = Object.entries(NUTRI_CATS).map(([cat, { color }]) => {
+    const count = counts[cat];
+    const pct = total > 0 ? Math.round(count / total * 100) : 0;
+    return `
+      <div class="nutri-bar-row">
+        <div class="nutri-bar-label">
+          <span class="nutri-bar-name">${cat}</span>
+          <span class="nutri-bar-val">${count}回 (${pct}%)</span>
+        </div>
+        <div class="nutri-bar-bg">
+          <div class="nutri-bar-fill" style="width:${pct}%;background:${color};"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Advice
+  const advice = [];
+  if (counts['主菜'] === 0) advice.push('たんぱく質（肉・魚・卵）が不足気味です');
+  if (counts['副菜'] === 0) advice.push('野菜・副菜が不足気味です');
+  if (counts['主食'] === 0) advice.push('主食の記録がありません');
+  if (counts['汁物'] > 0 && counts['副菜'] === 0) advice.push('野菜をもう少し増やしましょう');
+  if (advice.length === 0) advice.push('バランスよく記録されています！');
+
+  el.innerHTML = `
+    <div class="nutri-card">
+      <div class="nutri-title">
+        📊 ${periodLabel}の食事分析
+        <span class="nutri-badge ${scoreClass}">${scoreLabel}</span>
+      </div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:40px;font-weight:600;font-family:'Noto Serif JP',serif;color:var(--ink);">${score}</div>
+        <div style="font-size:11px;color:var(--ink3);letter-spacing:0.08em;">バランススコア / 100</div>
+      </div>
+      ${bars}
+      <div class="nutri-summary">
+        <div style="font-weight:500;margin-bottom:4px;">💡 アドバイス</div>
+        ${advice.map(a => `• ${a}`).join('<br>')}
+      </div>
+    </div>
+    <div class="card" style="padding:14px 16px;">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:10px;letter-spacing:0.06em;">MEAL COUNT</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">
+        <div style="background:var(--bg2);border-radius:var(--rsm);padding:10px;">
+          <div style="font-size:22px;font-weight:600;color:var(--ink);">${records.filter(r=>r.type==='朝食').length}</div>
+          <div style="font-size:10px;color:var(--ink3);">朝食</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--rsm);padding:10px;">
+          <div style="font-size:22px;font-weight:600;color:var(--ink);">${records.filter(r=>r.type==='昼食').length}</div>
+          <div style="font-size:10px;color:var(--ink3);">昼食</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--bg2);padding:10px;background:var(--bg2);border-radius:var(--rsm);">
+          <div style="font-size:22px;font-weight:600;color:var(--ink);">${records.filter(r=>r.type==='夕食').length}</div>
+          <div style="font-size:10px;color:var(--ink3);">夕食</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Family members ──
+function renderMembers() {
+  const members = getMembers();
+  const el = document.getElementById('member-list');
+  if (!members.length) {
+    el.innerHTML = '<div class="empty-msg" style="padding:1.5rem 0;"><span class="empty-icon">👨‍👩‍👧</span>まだメンバーがいません</div>';
+  } else {
+    el.innerHTML = members.map((m, i) => `
+      <div class="member-card">
+        <div class="member-avatar" style="background:var(--accent-bg);">${AVATARS[m.role]||'🧑'}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name} <span style="font-size:12px;color:var(--ink3);font-weight:400;">${m.age ? m.age+'歳' : ''} · ${m.role}</span></div>
+          ${m.allergy ? `<div class="member-allergies">${m.allergy.split(',').map(a=>a.trim()).filter(Boolean).map(a=>`<span class="badge badge-allergy">🚫 ${a}</span>`).join('')}</div>` : ''}
+          ${m.note ? `<div class="meal-meta-t" style="margin-top:4px;">${m.note}</div>` : ''}
+        </div>
+        <button class="member-del" onclick="deleteMember(${i})">削除</button>
+      </div>`).join('');
+  }
+  document.getElementById('family-allergy').value = getFamilyAllergy();
+}
+
+function openAddMember() {
+  ['m-name','m-age','m-allergy','m-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-role').value = '大人';
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-bg')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+function addMember() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { showToast('名前を入力してください'); return; }
+  const member = {
+    name, age: document.getElementById('m-age').value,
+    role: document.getElementById('m-role').value,
+    allergy: document.getElementById('m-allergy').value.trim(),
+    note: document.getElementById('m-note').value.trim()
+  };
+  const arr = getMembers(); arr.push(member);
+  DB.set(MEMBERS_KEY, arr);
+  closeModalDirect(); renderMembers(); updateHeader();
+  showToast(`✅ ${name}さんを追加しました`);
+}
+function deleteMember(i) {
+  const arr = getMembers(); arr.splice(i, 1);
+  DB.set(MEMBERS_KEY, arr);
+  renderMembers(); updateHeader();
+  showToast('削除しました');
+}
+function saveFamilyAllergy() {
+  DB.set(FALLERGY_KEY, document.getElementById('family-allergy').value.trim());
+  showToast('✅ 保存しました');
+}
+
+// ── Chips ──
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const g = chip.dataset.g;
+    if (g === 'mood') {
+      document.querySelectorAll(`[data-g=mood]`).forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+    } else {
+      chip.classList.toggle('on');
+    }
+  });
+});
+
+// ── AI Suggestions ──
+function getSuggestions() {
+  const mood    = [...document.querySelectorAll('[data-g=mood].on')].map(c => c.textContent);
+  const genres  = [...document.querySelectorAll('[data-g=genre].on')].map(c => c.textContent);
+  const extra   = document.getElementById('extra-req').value.trim();
+  const members = getMembers();
+  const familyAllergy = getFamilyAllergy();
+  const recent  = getRecords().slice(0,7).map(r => r.name).join('、') || 'なし';
+
+  document.getElementById('sug-err').textContent = '';
+
+  let familyContext = '';
+  if (members.length > 0) {
+    const kids = members.filter(m => m.role === '子供' || m.role === '乳幼児');
+    const adults = members.filter(m => m.role === '大人' || m.role === '高齢者');
+    familyContext += `\n家族構成：${members.map(m => `${m.name}(${m.role}${m.age?','+m.age+'歳':''})`).join('、')}`;
+    const allergies = members.filter(m => m.allergy).map(m => `${m.name}：${m.allergy}`);
+    if (allergies.length) familyContext += `\nアレルギー：${allergies.join(' / ')}`;
+    if (familyAllergy) familyContext += `\n全員除外食材：${familyAllergy}`;
+    const notes = members.filter(m => m.note).map(m => `${m.name}：${m.note}`);
+    if (notes.length) familyContext += `\n好き嫌い：${notes.join(' / ')}`;
+    if (kids.length > 0 && adults.length > 0) {
+      familyContext += `\n※ 子供(${kids.map(m=>m.name).join('、')})も一緒に食べられるよう、辛さや食材を配慮してください。`;
+    }
+  }
+
+  const prompt = `家族の晩ごはんの献立を3つ提案してください。
+
+条件：
+- 気分：${mood.join('、')}
+- ジャンル：${genres.join('、')}
+- その他リクエスト：${extra || 'なし'}
+- 最近食べたもの（なるべく被らないように）：${recent}${familyContext}
+
+各料理について、料理名・一言説明・おすすめポイントを教えてください。`;
+
+  document.getElementById('ai-result').innerHTML = `
+    <div class="sug-card">
+      <div class="sug-header">✨ Claudeアプリで提案を受け取る</div>
+      <div style="padding:16px;">
+        <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:14px;">
+          下のボタンを押すとClaudeアプリが開き、家族情報・条件を含んだメッセージが自動でコピーされます。貼り付けて送信してください。
+        </p>
+        <div style="background:var(--bg2);border-radius:var(--rsm);padding:12px;font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:14px;word-break:break-all;" id="prompt-preview">${prompt.replace(/\n/g,'<br>')}</div>
+        <button class="btn" style="margin-bottom:10px;" onclick="copyAndOpen()">📋 コピーしてClaudeを開く</button>
+        <button class="btn btn-outline" onclick="copyPromptOnly()">コピーのみ</button>
+        <div id="copy-msg" style="text-align:center;font-size:12px;color:var(--green);margin-top:8px;"></div>
+      </div>
+    </div>`;
+
+  window._currentPrompt = prompt;
+}
+
+function copyAndOpen() {
+  copyToClipboard(window._currentPrompt, () => {
+    document.getElementById('copy-msg').textContent = '✅ コピーしました！Claudeを開きます...';
+    setTimeout(() => window.open('https://claude.ai', '_blank'), 800);
+  });
+}
+function copyPromptOnly() {
+  copyToClipboard(window._currentPrompt, () => {
+    document.getElementById('copy-msg').textContent = '✅ コピーしました！';
+    setTimeout(() => document.getElementById('copy-msg').textContent = '', 2500);
+  });
+}
+function copyToClipboard(text, cb) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(cb).catch(() => fallbackCopy(text, cb));
+  } else { fallbackCopy(text, cb); }
+}
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function addSuggestion(name) {
+  document.getElementById('r-name').value = name;
+  document.getElementById('r-date').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-record').classList.add('active');
+  document.querySelectorAll('.tb')[0].classList.add('active');
+  showToast(`「${name}」を記録欄に追加しました`);
+}
+
+// ── Init ──
+document.getElementById('r-date').value = new Date().toISOString().split('T')[0];
+updateHeader();
+renderWeekly();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
